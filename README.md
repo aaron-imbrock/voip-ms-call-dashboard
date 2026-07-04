@@ -14,6 +14,8 @@ Set these environment variables in the Coolify UI:
 
 Deploy as a **Docker Compose** application. Traefik handles SSL and basic auth automatically.
 
+> **Build pack:** Set the build pack to **Docker Compose** in Coolify — do not use Nixpacks. The project has no `requirements.txt` or framework marker, so Nixpacks will fail to detect the application type.
+
 ## Local testing
 
 ```bash

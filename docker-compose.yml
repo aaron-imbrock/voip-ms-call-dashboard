@@ -11,6 +11,7 @@ services:
       - traefik.http.routers.voipms.tls.certresolver=letsencrypt
       - traefik.http.middlewares.voipms-auth.basicauth.users=${DASHBOARD_AUTH}
       - traefik.http.routers.voipms.middlewares=voipms-auth
+      - traefik.http.services.voipms.loadbalancer.server.port=8000
     networks:
       - coolify
 
