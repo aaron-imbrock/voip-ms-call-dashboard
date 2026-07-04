@@ -1,25 +1,29 @@
 #!/usr/bin/env python3
 """
-VoIP.ms dashboard — single-file CGI script (stdlib only).
+VoIP.ms dashboard — single-file stdlib-only HTTP server.
 
 Renders one server-side HTML page with:
   - current account balance
   - list of owned DIDs with SMS / MMS / phone / fax status
   - Call Detail Records for the last 60 days
 
-Credentials are read from environment variables (set in the fcgiwrap
-service unit — see the nginx/fcgiwrap notes). Nothing is hardcoded.
+Authentication is enforced by the application (HTTP Basic Auth), not by the
+reverse proxy. The dashboard never renders without valid credentials.
 
 Required env:
-  VOIPMS_USER  -> api_username (login email)
-  VOIPMS_PASS  -> api_password (the API password, NOT the portal login password)
+  VOIPMS_USER    -> api_username (login email)
+  VOIPMS_PASS    -> api_password (the API password, NOT the portal login password)
+  DASHBOARD_AUTH -> username:password in plaintext (password may contain colons)
 """
 
+import base64
+import hmac
 import http.server
 import json
 import html
 import os
 import socketserver
+import sys
 import urllib.parse
 import urllib.request
 from datetime import date, timedelta
@@ -277,7 +281,53 @@ def main():
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    def check_auth(self) -> bool:
+        raw = os.environ.get("DASHBOARD_AUTH", "")
+        if not raw or ":" not in raw:
+            print("DASHBOARD_AUTH not configured or missing colon", file=sys.stderr)
+            msg = b"Authentication not configured"
+            self.send_response(503)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Content-Length", str(len(msg)))
+            self.end_headers()
+            self.wfile.write(msg)
+            return False
+
+        cfg_user, cfg_pass = raw.split(":", 1)
+
+        auth_header = self.headers.get("Authorization", "")
+        if not auth_header.startswith("Basic "):
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="voip-dashboard"')
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return False
+
+        try:
+            decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+            if ":" not in decoded:
+                raise ValueError("no colon in decoded credentials")
+            req_user, req_pass = decoded.split(":", 1)
+            ok = (
+                hmac.compare_digest(req_user.encode(), cfg_user.encode())
+                and hmac.compare_digest(req_pass.encode(), cfg_pass.encode())
+            )
+        except Exception:
+            ok = False
+
+        if not ok:
+            print("Auth failure from {0}".format(self.address_string()), file=sys.stderr)
+            self.send_response(401)
+            self.send_header("WWW-Authenticate", 'Basic realm="voip-dashboard"')
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return False
+
+        return True
+
     def do_GET(self):
+        if not self.check_auth():
+            return
         if self.path != "/":
             self.send_response(404)
             self.end_headers()

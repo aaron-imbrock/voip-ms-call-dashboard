@@ -6,11 +6,4 @@ services:
       VOIPMS_PASS: ${VOIPMS_PASS}
       DASHBOARD_AUTH: ${DASHBOARD_AUTH}
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.voipms.rule=Host(`voip.startx.sh`)
-      - traefik.http.routers.voipms.entrypoints=https
-      - traefik.http.routers.voipms.tls=true
-      - traefik.http.routers.voipms.tls.certresolver=letsencrypt
-      - traefik.http.middlewares.voipms-auth.basicauth.users=${DASHBOARD_AUTH}
-      - traefik.http.routers.voipms.middlewares=voipms-auth
       - traefik.http.services.voipms.loadbalancer.server.port=8000
