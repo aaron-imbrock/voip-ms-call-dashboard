@@ -4,6 +4,7 @@ services:
     environment:
       VOIPMS_USER: ${VOIPMS_USER}
       VOIPMS_PASS: ${VOIPMS_PASS}
+      DASHBOARD_AUTH: ${DASHBOARD_AUTH}
     labels:
       - traefik.enable=true
       - traefik.http.routers.voipms.rule=Host(`voip.startx.sh`)
