@@ -24,3 +24,5 @@ export $(grep -v '^#' .env | xargs) && python3 dashboard.py
 ```
 
 Open `http://localhost:8000`.
+
+Once deployed, the dashboard is available at `https://voip.startx.sh`.
