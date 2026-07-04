@@ -1,0 +1,19 @@
+services:
+  dashboard:
+    build: .
+    environment:
+      VOIPMS_USER: ${VOIPMS_USER}
+      VOIPMS_PASS: ${VOIPMS_PASS}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.voipms.rule=Host(`voip.sizza.net`)
+      - traefik.http.routers.voipms.entrypoints=websecure
+      - traefik.http.routers.voipms.tls.certresolver=letsencrypt
+      - traefik.http.middlewares.voipms-auth.basicauth.users=${DASHBOARD_AUTH}
+      - traefik.http.routers.voipms.middlewares=voipms-auth
+    networks:
+      - coolify
+
+networks:
+  coolify:
+    external: true

@@ -1,0 +1,9 @@
+# real credentials — never commit
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+.claude
+DOC
